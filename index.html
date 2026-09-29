@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Attendance Manager</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h1>📋 Student Attendance Manager</h1>
+  <div class="date" id="todayLabel"></div>
+</header>
+
+<nav>
+  <button class="active" data-tab="take" onclick="showTab('take')">Take Attendance</button>
+  <button data-tab="students" onclick="showTab('students')">Students</button>
+  <button data-tab="report" onclick="showTab('report')">Reports</button>
+</nav>
+
+<main>
+
+  <!-- TAKE ATTENDANCE -->
+  <section id="tab-take" class="tab active">
+    <div class="stats" id="statsRow"></div>
+    <div class="card">
+      <div class="toolbar">
+        <label for="attDate">Date:</label>
+        <input type="date" id="attDate">
+        <button class="btn btn-gray btn-sm" onclick="setAll('P')">All Present</button>
+        <button class="btn btn-gray btn-sm" onclick="setAll('A')">All Absent</button>
+        <button class="btn btn-gray btn-sm" onclick="setAll('L')">All Late</button>
+      </div>
+      <div id="attList"></div>
+      <div class="toolbar" style="margin-top:16px; margin-bottom:0;">
+        <button class="btn btn-green" onclick="saveAttendance()">💾 Save Attendance</button>
+        <span class="muted" id="savedInfo"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="tab-students" class="tab">
+    <div class="card">
+      <h2>Add Student</h2>
+      <form class="inline" onsubmit="addStudent(event)">
+        <input type="text" id="stuName" placeholder="Student name" required>
+        <input type="text" id="stuRoll" placeholder="Roll no." required>
+        <input type="text" id="stuClass" placeholder="Class / Section" required>
+        <button class="btn btn-primary" type="submit">+ Add</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Student List <span class="muted" id="stuCount"></span></h2>
+      <div id="stuList"></div>
+    </div>
+    <div class="card danger-zone">
+      <h2>Danger Zone</h2>
+      <button class="btn btn-red" onclick="clearAll()">🗑 Delete ALL data</button>
+      <p class="muted" style="margin-top:8px;">Removes all students and attendance records permanently.</p>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="tab-report" class="tab">
+    <div class="card">
+      <div class="toolbar">
+        <label for="repClass">Filter by class:</label>
+        <select id="repClass" onchange="renderReport()"><option value="">All classes</option></select>
+        <button class="btn btn-primary btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div id="repTable"></div>
+    </div>
+    <div class="card">
+      <h2>History by Date</h2>
+      <div class="toolbar">
+        <label for="histDate">Date:</label>
+        <input type="date" id="histDate" onchange="renderHistory()">
+      </div>
+      <div id="histTable"></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Attendance Manager</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  body { background: #f0f2f5; min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 18px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { font-size: 1.35rem; }
+  header .date { background: rgba(255,255,255,.15); padding: 6px 14px; border-radius: 20px; font-size: .9rem; }
+
+  nav { background: #fff; display: flex; box-shadow: 0 2px 4px rgba(0,0,0,.08); }
+  nav button {
+    flex: 1; padding: 14px; border: none; background: none; cursor: pointer;
+    font-size: 1rem; color: #555; border-bottom: 3px solid transparent; transition: .2s;
+  }
+  nav button.active { color: #2a5298; border-bottom-color: #2a5298; font-weight: 600; }
+  nav button:hover { background: #f5f7fa; }
+
+  main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card h2 { font-size: 1.1rem; margin-bottom: 14px; color: #333; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat { background: #fff; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .stat .num { font-size: 2rem; font-weight: 700; }
+  .stat .lbl { color: #777; font-size: .85rem; margin-top: 4px; }
+  .stat.green .num { color: #16a34a; } .stat.red .num { color: #dc2626; }
+  .stat.blue .num { color: #2563eb; } .stat.purple .num { color: #7c3aed; }
+
+  form.inline { display: flex; gap: 10px; flex-wrap: wrap; }
+  input, select {
+    padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: .95rem; flex: 1; min-width: 120px;
+  }
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: .95rem; font-weight: 600; transition: .2s;
+  }
+  .btn-primary { background: #2a5298; color: #fff; }
+  .btn-primary:hover { background: #1e3c72; }
+  .btn-green { background: #16a34a; color: #fff; }
+  .btn-green:hover { background: #15803d; }
+  .btn-gray { background: #e5e7eb; color: #333; }
+  .btn-gray:hover { background: #d1d5db; }
+  .btn-red { background: #dc2626; color: #fff; padding: 6px 12px; font-size: .85rem; }
+  .btn-sm { padding: 6px 12px; font-size: .85rem; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: .95rem; }
+  th { background: #f8fafc; color: #555; font-weight: 600; }
+  tr:hover td { background: #f8fafc; }
+
+  .att-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; border-bottom: 1px solid #eee; gap: 8px; flex-wrap: wrap; }
+  .att-info { display: flex; align-items: center; gap: 12px; }
+  .roll { background: #e0e7ff; color: #3730a3; font-weight: 700; border-radius: 8px; min-width: 40px; text-align: center; padding: 6px 8px; }
+  .att-btns { display: flex; gap: 6px; }
+  .att-btn { padding: 8px 16px; border: 2px solid #d1d5db; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .9rem; color: #666; transition: .15s; }
+  .att-btn.sel-P { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .att-btn.sel-A { background: #dc2626; border-color: #dc2626; color: #fff; }
+  .att-btn.sel-L { background: #d97706; border-color: #d97706; color: #fff; }
+
+  .badge { padding: 3px 10px; border-radius: 12px; font-size: .8rem; font-weight: 600; }
+  .badge-P { background: #dcfce7; color: #16a34a; }
+  .badge-A { background: #fee2e2; color: #dc2626; }
+  .badge-L { background: #fef3c7; color: #d97706; }
+
+  .bar-bg { background: #e5e7eb; border-radius: 10px; height: 10px; width: 140px; }
+  .bar-fill { height: 10px; border-radius: 10px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .toolbar label { font-size: .9rem; color: #555; font-weight: 600; }
+  .empty { text-align: center; color: #999; padding: 30px 0; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #111827; color: #fff; padding: 12px 24px; border-radius: 10px;
+    font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 99;
+  }
+  .toast.show { opacity: 1; }
+  .muted { color: #888; font-size: .85rem; }
+  .danger-zone { border: 1px solid #fecaca; background: #fff5f5; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 Student Attendance Manager</h1>
+  <div class="date" id="todayLabel"></div>
+</header>
+
+<nav>
+  <button class="active" data-tab="take" onclick="showTab('take')">Take Attendance</button>
+  <button data-tab="students" onclick="showTab('students')">Students</button>
+  <button data-tab="report" onclick="showTab('report')">Reports</button>
+</nav>
+
+<main>
+
+  <!-- TAKE ATTENDANCE -->
+  <section id="tab-take" class="tab active">
+    <div class="stats" id="statsRow"></div>
+    <div class="card">
+      <div class="toolbar">
+        <label for="attDate">Date:</label>
+        <input type="date" id="attDate">
+        <button class="btn btn-gray btn-sm" onclick="setAll('P')">All Present</button>
+        <button class="btn btn-gray btn-sm" onclick="setAll('A')">All Absent</button>
+        <button class="btn btn-gray btn-sm" onclick="setAll('L')">All Late</button>
+      </div>
+      <div id="attList"></div>
+      <div class="toolbar" style="margin-top:16px; margin-bottom:0;">
+        <button class="btn btn-green" onclick="saveAttendance()">💾 Save Attendance</button>
+        <span class="muted" id="savedInfo"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="tab-students" class="tab">
+    <div class="card">
+      <h2>Add Student</h2>
+      <form class="inline" onsubmit="addStudent(event)">
+        <input type="text" id="stuName" placeholder="Student name" required>
+        <input type="text" id="stuRoll" placeholder="Roll no." required>
+        <input type="text" id="stuClass" placeholder="Class / Section" required>
+        <button class="btn btn-primary" type="submit">+ Add</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Student List <span class="muted" id="stuCount"></span></h2>
+      <div id="stuList"></div>
+    </div>
+    <div class="card danger-zone">
+      <h2>Danger Zone</h2>
+      <button class="btn btn-red" onclick="clearAll()">🗑 Delete ALL data</button>
+      <p class="muted" style="margin-top:8px;">Removes all students and attendance records permanently.</p>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="tab-report" class="tab">
+    <div class="card">
+      <div class="toolbar">
+        <label for="repClass">Filter by class:</label>
+        <select id="repClass" onchange="renderReport()"><option value="">All classes</option></select>
+        <button class="btn btn-primary btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div id="repTable"></div>
+    </div>
+    <div class="card">
+      <h2>History by Date</h2>
+      <div class="toolbar">
+        <label for="histDate">Date:</label>
+        <input type="date" id="histDate" onchange="renderHistory()">
+      </div>
+      <div id="histTable"></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- DATA ----------
+let students = JSON.parse(localStorage.getItem('att_students') || '[]');
+let records  = JSON.parse(localStorage.getItem('att_records')  || '{}');
+let current  = {};   // unsaved selections for the selected date
+
+function persist() {
+  localStorage.setItem('att_students', JSON.stringify(students));
+  localStorage.setItem('att_records', JSON.stringify(records));
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function showTab(name) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  if (name === 'report') { fillClassFilter(); renderReport(); }
+}
+
+// ---------- STUDENTS ----------
+function addStudent(e) {
+  e.preventDefault();
+  const name = document.getElementById('stuName').value.trim();
+  const roll = document.getElementById('stuRoll').value.trim();
+  const cls  = document.getElementById('stuClass').value.trim();
+  if (students.some(s => s.roll === roll && s.cls.toLowerCase() === cls.toLowerCase())) {
+    toast('⚠️ Roll no. already exists in this class');
+    return;
+  }
+  students.push({ id: Date.now(), name, roll, cls });
+  students.sort((a, b) => a.cls.localeCompare(b.cls) || String(a.roll).localeCompare(String(b.roll), undefined, {numeric: true}));
+  persist();
+  e.target.reset();
+  renderStudents(); renderAttendance(); renderStats();
+  toast('✅ Student added');
+}
+
+function deleteStudent(id) {
+  if (!confirm('Delete this student and their attendance records?')) return;
+  students = students.filter(s => s.id !== id);
+  for (const d in records) delete records[d][id];
+  persist();
+  renderStudents(); renderAttendance(); renderStats();
+  toast('🗑 Student deleted');
+}
+
+function renderStudents() {
+  const el = document.getElementById('stuList');
+  document.getElementById('stuCount').textContent = '(' + students.length + ')';
+  if (!students.length) { el.innerHTML = '<div class="empty">No students yet. Add your first student above.</div>'; return; }
+  let html = '<table><tr><th>Roll</th><th>Name</th><th>Class</th><th></th></tr>';
+  for (const s of students) {
+    html += `<tr><td>${esc(s.roll)}</td><td>${esc(s.name)}</td><td>${esc(s.cls)}</td>
+      <td><button class="btn btn-red" onclick="deleteStudent(${s.id})">Delete</button></td></tr>`;
+  }
+  el.innerHTML = html + '</table>';
+}
+
+// ---------- TAKE ATTENDANCE ----------
+function loadCurrent() {
+  const d = document.getElementById('attDate').value;
+  current = Object.assign({}, records[d] || {});
+}
+
+function renderAttendance() {
+  loadCurrent();
+  const el = document.getElementById('attList');
+  const d = document.getElementById('attDate').value;
+  if (!students.length) { el.innerHTML = '<div class="empty">Add students first (Students tab).</div>'; return; }
+  let html = '';
+  for (const s of students) {
+    const v = current[s.id] || '';
+    html += `<div class="att-row">
+      <div class="att-info"><span class="roll">${esc(s.roll)}</span>
+        <div><div>${esc(s.name)}</div><div class="muted">${esc(s.cls)}</div></div></div>
+      <div class="att-btns">
+        <button class="att-btn ${v==='P'?'sel-P':''}" onclick="mark(${s.id},'P')">P</button>
+        <button class="att-btn ${v==='A'?'sel-A':''}" onclick="mark(${s.id},'A')">A</button>
+        <button class="att-btn ${v==='L'?'sel-L':''}" onclick="mark(${s.id},'L')">L</button>
+      </div></div>`;
+  }
+  el.innerHTML = html;
+  const saved = records[d] ? `Last saved: ${new Date(d + 'T00:00').toDateString()}` : 'Not saved yet for this date';
+  document.getElementById('savedInfo').textContent = saved;
+}
+
+function mark(id, v) { current[id] = (current[id] === v) ? '' : v; renderAttendance(); renderStats(); }
+function setAll(v) { for (const s of students) current[s.id] = v; renderAttendance(); renderStats(); }
+
+function saveAttendance() {
+  const d = document.getElementById('attDate').value;
+  if (!d) { toast('⚠️ Pick a date first'); return; }
+  const entry = {};
+  for (const s of students) if (current[s.id]) entry[s.id] = current[s.id];
+  records[d] = entry;
+  persist();
+  renderAttendance();
+  toast('💾 Attendance saved for ' + d);
+}
+
+function renderStats() {
+  const d = document.getElementById('attDate').value;
+  let p = 0, a = 0, l = 0;
+  for (const s of students) {
+    const v = current[s.id];
+    if (v === 'P') p++; else if (v === 'A') a++; else if (v === 'L') l++;
+  }
+  const unmarked = students.length - p - a - l;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat blue"><div class="num">${students.length}</div><div class="lbl">Total Students</div></div>
+    <div class="stat green"><div class="num">${p}</div><div class="lbl">Present</div></div>
+    <div class="stat red"><div class="num">${a}</div><div class="lbl">Absent</div></div>
+    <div class="stat purple"><div class="num">${l}</div><div class="lbl">Late</div></div>
+    <div class="stat"><div class="num">${unmarked}</div><div class="lbl">Unmarked</div></div>`;
+}
+
+// ---------- REPORTS ----------
+function fillClassFilter() {
+  const sel = document.getElementById('repClass');
+  const cur = sel.value;
+  const classes = [...new Set(students.map(s => s.cls))].sort();
+  sel.innerHTML = '<option value="">All classes</option>' + classes.map(c => `<option>${esc(c)}</option>`).join('');
+  sel.value = cur;
+}
+
+function calcPct(s) {
+  let p = 0, total = 0;
+  for (const d in records) {
+    const v = records[d][s.id];
+    if (v) { total++; if (v === 'P' || v === 'L') p++; }
+  }
+  return total ? Math.round(p / total * 100) : null;
+}
+
+function renderReport() {
+  const filter = document.getElementById('repClass').value;
+  const list = students.filter(s => !filter || s.cls === filter);
+  const el = document.getElementById('repTable');
+  if (!list.length) { el.innerHTML = '<div class="empty">No students to report on.</div>'; return; }
+  let html = '<table><tr><th>Roll</th><th>Name</th><th>Class</th><th>Attendance %</th></tr>';
+  for (const s of list) {
+    const pct = calcPct(s);
+    const color = pct === null ? '#9ca3af' : pct >= 90 ? '#16a34a' : pct >= 75 ? '#d97706' : '#dc2626';
+    const bar = pct === null ? '<span class="muted">No records</span>'
+      : `<div style="display:flex;align-items:center;gap:8px;"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color};"></div></div><b>${pct}%</b></div>`;
+    html += `<tr><td>${esc(s.roll)}</td><td>${esc(s.name)}</td><td>${esc(s.cls)}</td><td>${bar}</td></tr>`;
+  }
+  el.innerHTML = html + '</table>';
+}
+
+function renderHistory() {
+  const d = document.getElementById('histDate').value;
+  const el = document.getElementById('histTable');
+  const rec = records[d];
+  if (!d) { el.innerHTML = '<div class="empty">Pick a date to view history.</div>'; return; }
+  if (!rec || !Object.keys(rec).length) { el.innerHTML = '<div class="empty">No attendance recorded on this date.</div>'; return; }
+  let html = `<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
+  for (const s of students) {
+    const v = rec[s.id];
+    if (!v) continue;
+    const label = v === 'P' ? 'Present' : v === 'A' ? 'Absent' : 'Late';
+    html += `<tr><td>${esc(s.roll)}</td><td>${esc(s.name)}</td><td><span class="badge badge-${v}">${label}</span></td></tr>`;
+  }
+  el.innerHTML = html + '</table>';
+}
+
+function exportCSV() {
+  let csv = 'Roll,Name,Class,Days Marked,Days Present/Late,Attendance %\n';
+  for (const s of students) {
+    let p = 0, total = 0;
+    for (const d in records) { const v = records[d][s.id]; if (v) { total++; if (v !== 'A') p++; } }
+    const pct = total ? Math.round(p / total * 100) : '';
+    csv += `"${s.roll}","${s.name}","${s.cls}",${total},${p},${pct}\n`;
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance_report.csv';
+  a.click();
+  toast('⬇ CSV downloaded');
+}
+
+// ---------- MISC ----------
+function clearAll() {
+  if (!confirm('Delete ALL students and attendance records? This cannot be undone!')) return;
+  if (!confirm('Are you absolutely sure?')) return;
+  students = []; records = {}; current = {};
+  persist();
+  renderStudents(); renderAttendance(); renderStats();
+  toast('🗑 All data cleared');
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---------- INIT ----------
+(function init() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('attDate').value = today;
+  document.getElementById('histDate').value = today;
+  document.getElementById('todayLabel').textContent = new Date().toDateString();
+  document.getElementById('attDate').addEventListener('change', () => { renderAttendance(); renderStats(); });
+  renderStudents(); renderAttendance(); renderStats();
+})();
+</script>
+</body>
+</html>
